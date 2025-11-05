@@ -1,0 +1,17 @@
+FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-runtime
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir poetry
+
+COPY pyproject.toml poetry.lock ./
+
+RUN poetry config virtualenvs.create false
+
+RUN poetry install --no-interaction --no-ansi --no-root --with dev
+
+COPY . .
+
+RUN poetry install --no-interaction --no-ansi --only-root
+
+CMD ["python", "-m", "marker.scripts.temporal_worker"]

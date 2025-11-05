@@ -45,6 +45,8 @@ python-pptx = {version = "^1.0.2", optional = true}
 ebooklib = {version = "^0.18", optional = true}
 weasyprint = {version = "^63.1", optional = true}
 openai = "^1.65.2"
+temporalio = "^1.18.2"
+black = "^25.9.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
@@ -72,6 +74,7 @@ marker_chunk_convert = "marker.scripts.chunk_convert:chunk_convert_cli"
 marker_gui = "marker.scripts.run_streamlit_app:streamlit_app_cli"
 marker_extract = "marker.scripts.run_streamlit_app:extraction_app_cli"
 marker_server = "marker.scripts.server:server_cli"
+marker_temporal_worker = "marker.scripts.temporal_worker:main"
 
 [build-system]
 requires = ["poetry-core"]

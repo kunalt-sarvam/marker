@@ -1,0 +1,94 @@
+services:
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: temporal
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - arya-network
+    volumes:
+      - temporal_data:/temporal/data
+
+  postgresql:
+    image: postgres:12
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=temporal
+      - POSTGRES_PASSWORD=temporal
+      - POSTGRES_DB=temporal
+    networks:
+      - arya-network
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U temporal" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: temporal-ui
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - temporal
+    networks:
+      - arya-network
+
+  marker-server:
+    image: marker-server
+    pull_policy: never
+    ports:
+      - "8000:8000"
+    environment:
+      - TEMPORAL_HOST=temporal:7233
+    depends_on:
+      - temporal
+    networks:
+      - arya-network
+    volumes:
+      - ./uploads:/app/uploads
+      - ./conversion_results:/app/conversion_results
+      - ~/.cache/datalab/models:/root/.cache/datalab/models
+  marker-worker:
+    image: marker-worker
+    pull_policy: never
+    environment:
+      - TEMPORAL_HOST=temporal:7233
+    depends_on:
+      - temporal
+    networks:
+      - arya-network
+    volumes:
+      - ./uploads:/app/uploads
+      - ./conversion_results:/app/conversion_results
+      - ~/.cache/datalab/models:/root/.cache/datalab/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
+volumes:
+  temporal_data:
+  postgresql_data:
+
+networks:
+  arya-network:
